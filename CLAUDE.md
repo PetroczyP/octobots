@@ -192,6 +192,16 @@ Skipping any step breaks the pipeline.
 
 **GitHub Labels Track Status:** `ready` → `in-progress` → `review` → `testing` → `done`. Before starting a task, check for `in-progress` label to avoid duplicate work.
 
+**Agent Tool vs Taskbox:** The Claude Code Agent tool spawns sub-agents in your own context. Taskbox sends messages to other roles in their own tmux panes. Never use Agent to do another role's job — results are invisible to them, consume your context, and bypass their isolated workspace.
+
+## macOS Compatibility
+
+macOS ships bash 3.2 (GPLv2). Shell scripts must avoid bash 4+ features:
+- No `declare -A` (associative arrays) — use comma-delimited strings with `case` pattern matching
+- No `readarray`/`mapfile` — use `while read` loops
+
+The `install.sh` script handles Python 3.12+ PEP 668 ("externally managed environment") by auto-creating a `venv/` when bare `pip install` fails. The notify MCP server must use the venv python (not system python) since the `mcp` package is installed there.
+
 ## Configuration
 
 `.env.octobots` (in target project root, not in this repo):
@@ -202,7 +212,9 @@ OCTOBOTS_WORKERS=project-manager python-dev js-dev qa-engineer ba tech-lead
 OCTOBOTS_EXCLUDED_ROLES=scout
 ```
 
-`.mcp.json` configures MCP servers available to all roles: Playwright, GitHub, Context7, Tavily (web search), Accessibility Scanner, Lighthouse.
+`.mcp.json` configures MCP servers available to all roles. The `notify` server is required for Telegram integration — `install.sh` adds it automatically, using the venv python if one exists. Other servers: Playwright, GitHub, Context7, Tavily (web search).
+
+`select-agents.py` writes all UI (menus, prompts) to stderr and repo-line output to stdout, so `install.sh` can capture the output via `$()` without swallowing the interactive prompts.
 
 ## Adding a New Role
 
